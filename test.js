@@ -1,28 +1,44 @@
 class myPromise {
   constructor(executor) {
-    this.state = "pending";
+    this.state = 'pending';
     this.result = null;
     this.reason = null;
 
     const resolve = (val) => {
       if (val instanceof myPromise) {
+        // TODO ?这里的resolve是什么
+        //  展开一层
         return val.then(resolve);
       }
-      if (this.state === "pending") {
-        this.state = "fulfilled";
+      if (this.state === 'pending') {
+        this.state = 'fulfilled';
         this.result = val;
       }
     };
 
     const reject = () => {
-      this.state = "rejected";
-      this.result = null;
+      if (this.state === 'pending') {
+        this.state = 'rejected';
+        this.result = null;
+      }
     };
+
     if (executor) executor(resolve, reject);
   }
 
   //  实例方法：
-  then(val) {}
+  //  手写then
+  then(onFulfilled, onRejected) {
+    return new myPromise((resolve, reject) => {
+      if (this.value) {
+        onFulfilled;
+        resolve(this.value);
+      } else if (this.reason) {
+        onRejected;
+        reject(this.reason);
+      }
+    });
+  }
 
   //  静态方法：
   //  静态resolve
@@ -33,6 +49,15 @@ class myPromise {
       // return val.then(resolve, reject);
     }
     //  真正意义上创建一个被解决的promise，用传入的数据结合内部的方法
+    return new myPromise((resolve) => {
+      resolve(val);
+    });
+  }
+
+  static Urresolve(val) {
+    // TODO 嵌套！展开铺平
+    if (val instanceof myPromise) return val;
+    //  常规封装
     return new myPromise((resolve) => {
       resolve(val);
     });
@@ -100,7 +125,7 @@ class myPromise {
         //  包装每一个item，静态方法兼顾非promise元素
         myPromise.myResolve(item).then(
           (val) => {
-            returnArr[index] = { status: "fulfilled", value: val };
+            returnArr[index] = { status: 'fulfilled', value: val };
             count++;
             if (count === length) resolve(returnArr);
           },
@@ -112,9 +137,33 @@ class myPromise {
     });
   }
 
-  // 手写allsettled
-  static myAllSettled(iterable) {
+  static urAll(iteralbe) {
     return new myPromise((resolve, reject) => {
+      const promises = Array.from(iteralbe);
+      const length = promises.length;
+      const getPool = Array(length);
+      let count = 0;
+      //  特殊情况处理
+      if (getPool.length === 0) return resolve([]);
+      promises.forEach((item, i) => {
+        //  元素封装
+        myPromise.myResolve(item).then(
+          (value) => {
+            getPool[i] = value;
+            count++;
+            if (count === length) resolve(getPool);
+          },
+          (reason) => {
+            reject(new Error(reason));
+          },
+        );
+      });
+    });
+  }
+
+  // 手写allsettled.  在于所有敲定，只需要结果不论对错
+  static myAllSettled(iterable) {
+    return new myPromise((resolve) => {
       const promises = Array.from(iterable);
       const length = promises.length;
       const returnArr = Array(length);
@@ -126,14 +175,41 @@ class myPromise {
         //  包装每一个item，静态方法兼顾非promise元素
         myPromise.myResolve(item).then(
           (val) => {
-            returnArr[index] = { status: "fulfilled", value: val };
+            returnArr[index] = { status: 'fulfilled', value: val };
             count++;
             if (count === length) resolve(returnArr);
           },
           (reason) => {
-            returnArr[index] = { status: "rejected", value: reason }; //   可以补位一个占位图，如果处理图片场景
+            returnArr[index] = { status: 'rejected', value: reason }; //   可以补位一个占位图，如果处理图片场景
             count++;
             if (count === length) resolve(returnArr);
+          },
+        );
+      });
+    });
+  }
+
+  static urAllsettled(iterable) {
+    return new myPromise((resolve) => {
+      //  变量配置
+      const promises = Array.from(iterable);
+      const length = promises.length;
+      const getPool = Array(length);
+      let count = 0;
+      //  空置处理
+      if (length === 0) return resolve([]);
+      //  逐个封装处理
+      promises.forEach((item, i) => {
+        myPromise.myResolve(item).then(
+          (value) => {
+            getPool[i] = { status: 'fulfilled', value: value };
+            count++;
+            if (count === length) resolve(getPool);
+          },
+          (reason) => {
+            getPool[i] = { status: 'rejected', reason: reason };
+            count++;
+            if (count === length) resolve(getPool);
           },
         );
       });
@@ -150,6 +226,21 @@ class myPromise {
       }
     });
   };
+  //  第一个敲定 不论对错
+  static urRace(iterable) {
+    return new myPromise((resolve, reject) => {
+      //  配置
+      const promises = Array.from(iterable);
+      if (promises.length === 0) return resolve([]);
+      //  封装竞速
+      promises.forEach((item) => {
+        myPromise.myResolve(item).then(
+          (value) => resolve(value),
+          (reason) => reject(reason),
+        );
+      });
+    });
+  }
 
   //  手写any
   //  race变种
@@ -160,21 +251,43 @@ class myPromise {
       const errorsGet = Array(length);
       let rejectedCount = 0;
 
-      if (length === 0) return reject(new Error("Empty iterable"));
+      if (length === 0) return reject(new Error('Empty iterable'));
       promises.forEach((item, i) => {
         myPromise.myResolve(item).then(
           (value) => resolve(value),
           (reason) => {
-            errorsGet[i] = { status: "rejected", value: reason };
+            errorsGet[i] = { status: 'rejected', value: reason };
             rejectedCount++;
             if (rejectedCount === length) {
-              reject("And Then There Were None!", errorsGet);
+              reject('And Then There Were None!', errorsGet);
             }
           },
         );
       });
     });
   };
+
+  static urAny(iterable) {
+    return new myPromise((resolve, reject) => {
+      const promises = Array.from(iterable);
+      const length = promises.length;
+      const AggreGateError = Array(length);
+      let count = 0;
+      //  空置处理
+      if (length === 0) return reject(['传入对象为空']);
+      //  封装核心
+      promises.forEach((item, i) => {
+        myPromise.myResolve(item).then(
+          (value) => resolve(value),
+          (reason) => {
+            AggreGateError[i] = { status: 'rejected', reason: reason };
+            count++;
+            if (count === length) reject(getPool);
+          },
+        );
+      });
+    });
+  }
 }
 
 // 手写map
@@ -210,13 +323,58 @@ const curriedLog = (date) => (type) => (message) => {
 };
 
 // 第一步：锁定日期（生成一个“今天的日志器”）
-const logToday = curriedLog("2026-03-07");
+const logToday = curriedLog('2026-03-07');
 
 // 第二步：锁定类型（生成一个“今天的 DEBUG 专用日志器”）
-const debugToday = logToday("DEBUG");
-const errorToday = logToday("ERROR");
+const debugToday = logToday('DEBUG');
+const errorToday = logToday('ERROR');
 
 // 第三步：只需传信息，逻辑起飞！
-debugToday("内存正常"); // 输出: [2026-03-07] [DEBUG] : 内存正常
-debugToday("CPU正常"); // 输出: [2026-03-07] [DEBUG] : CPU正常
-errorToday("系统崩溃"); // 输出: [2026-03-07] [ERROR] : 系统崩溃
+debugToday('内存正常'); // 输出: [2026-03-07] [DEBUG] : 内存正常
+debugToday('CPU正常'); // 输出: [2026-03-07] [DEBUG] : CPU正常
+errorToday('系统崩溃'); // 输出: [2026-03-07] [ERROR] : 系统崩溃
+
+//  科利华工具函数
+const CurriedTool = (templateFn) => {
+  return (curryFy = (...Args) => {
+    if (Args.length === templateFn.length) {
+      return templateFn(...Args);
+    } else if (Args.length < templateFn.length) {
+      return (...args2) => curryFy.apply(this, Args.concat(args2));
+    }
+  });
+};
+
+//  手写 DeepClone
+//  **递归降维**  缓存处理循环引用
+const myDeepClone = (src, map = new WeakMap()) => {
+  if (typeof src !== 'object' || src === null) return src;
+
+  if (map.has(src)) return map.get(src);
+  //    处理这一层数据类型
+  const target = Array.isArray(src) ? [] : {};
+  map.set(src, target);
+
+  for (const key in src) {
+    //  只要自身属性，不需要原型链属性
+    if (Object.hasOwn(src, key)) {
+      //    递归;
+      return (target[key] = myDeepClone(src[key], map));
+    }
+  }
+  return target;
+};
+
+//  手写new
+
+const myNew = (src, ...args) => {
+  //  建立原型链
+  const target = Object.create(src.prototype);
+  //  注入实例属性
+  const result = src.call(target, ...args);
+  //  如果原构造函数显示返回一个对象,遵从原生new的处理方法，返回这个对象
+  return result instanceof Object ? result : target;
+};
+
+
+//  手写apply
