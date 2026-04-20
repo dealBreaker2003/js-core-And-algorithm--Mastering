@@ -156,7 +156,200 @@ const setNum = (s = 0) => {
     }
     return s > 0 ? res : res = '-' + res
 }
-console.log(setNum(12122123.127894));
+// console.log(setNum(12122123.127894));
+
+//  可变窗口
+
+const getMaxLength = (s = '') => {
+
+    const maxSet = new Set()
+    const lengthPool = []
+    let count = 0
+    if (s.length <= 1) return s.length
+    for (let i = 0; i < s.length; i++) {
+        if (maxSet.has(s[i])) {
+            maxSet.clear()
+            maxSet.add(s[i], i)
+            lengthPool.push(count)
+            count = 1
+            continue
+        }
+        maxSet.add(s[i], i)
+        count++
+    }
+    lengthPool.push(count)
+    return lengthPool.sort((a, b) => b - a)[0]
+}
+
+const s = 'abcabcd123411'
+// console.log(getMaxLength(s));
+
+
+//  快排
+//  分治 + 递归
+const num = [5, 2, 3, 1]
+
+const fastSort = (s = []) => {
+    //  特殊情况优先跳出
+    if (s.length <= 1) return s
+    const left = []
+    const right = []
+    const base = s[0]
+    let res = []
+
+
+    for (let i = 0; i < s.length; i++) {
+        if (s[i] === base) continue
+        if (s[i] > base) {
+            right.push(s[i])
+        } else {
+            left.push(s[i])
+        }
+    }
+    const resL = fastSort(left)
+    const resR = fastSort(right)
+
+    return [...resL, base, ...resR]
+}
 
 
 
+function quickSort(nums) {
+    if (nums.length <= 1) return nums;
+
+    // 选择基准（这里简单选中间的，可以防止完全有序时的最坏情况）
+    const pivotIndex = Math.floor(nums.length / 2);
+    const pivot = nums[pivotIndex];
+
+    const left = [];
+    const right = [];
+
+    for (let i = 0; i < nums.length; i++) {
+        if (i === pivotIndex) continue; // 跳过基准自身
+        if (nums[i] < pivot) {
+            left.push(nums[i]);
+        } else {
+            right.push(nums[i]);
+        }
+    }
+
+    // 递归处理左右两半，并拼接
+    return [...quickSort(left), pivot, ...quickSort(right)];
+}
+
+
+// console.log(fastSort(num));
+// console.log(quickSort(num));
+
+//  快排应用
+//  快速选择
+
+
+// const quickSelect = (s = [], k = 0) => {
+//     //  特殊情况优先跳出
+//     if (s.length <= 1) return s
+//     const left = []
+//     const right = []
+//     const base = s[0]
+//     let res = []
+
+
+//     for (let i = 0; i < s.length; i++) {
+//         if (s[i] === base) continue
+//         if (s[i] > base) {
+//             right.push(s[i])
+//         } else {
+//             left.push(s[i])
+//         }
+//     }
+//     if (right.length === k - 1)
+//         const resL = quickSelect(left)
+//     const resR = quickSelect(right)
+
+//     return [...resL, base, ...resR]
+// }
+
+// function findKthLargest(nums, k) {
+//     // 第 K 大的元素，也就是从小到大排序后下标为 nums.length - k 的元素
+//     const targetIndex = nums.length - k;
+
+//     function quickSelect(left, right) {
+//         // 选取最右边的元素作为基准
+//         let pivot = nums[right];
+//         let p = left; // p 最终会是指向基准应该在的正确位置
+
+//         // 原地 partition (双指针)
+//         for (let i = left; i < right; i++) {
+//             console.log(nums[i],pivot);
+
+//             if (nums[i] <= pivot) {
+//                 // 交换
+//                 [nums[p], nums[i]] = [nums[i], nums[p]];
+//                 p++;
+//             }
+
+//         }
+//         console.log(nums);
+//         // 把基准换到正确的位置
+//         [nums[p], nums[right]] = [nums[right], nums[p]];
+
+//         // 判断 p 和目标索引的关系
+//         if (p === targetIndex) {
+//             return nums[p]; // 找到了！
+//         } else if (p < targetIndex) {
+//             // 去右半部分找
+//             return quickSelect(p + 1, right);
+//         } else {
+//             // 去左半部分找
+//             return quickSelect(left, p - 1);
+//         }
+//     }
+
+//     return quickSelect(0, nums.length - 1);
+// }
+
+const selectNums = [5, 7, 1, 3, 2, 9, 4]
+// findKthLargest(selectNums, 2)
+
+
+const quickSelect = (nums = [], k = 0) => {
+    const targetIndex = nums.length - k
+    const selectIndex = (L, R) => {
+        const base = nums[R]
+        let cur = L
+        for (let i = L; i < R; i++) {
+            if (nums[i] < base) {
+                //  小于标准先拿到前面
+                [nums[cur], nums[i]] = [nums[i], nums[cur]]
+                //  左指针前进一步
+                cur++
+            }
+        }
+        //  标准归位
+        [nums[cur], nums[R]] = [nums[R], nums[cur]]
+        //  判断标准是否命中
+        if (cur === targetIndex) {
+            return nums[cur]
+        } else if (cur < targetIndex) {
+            //  小了，去右半区
+            return selectIndex(cur + 1, R)
+        } else {
+            //  大了，去左半区
+            return selectIndex(L, cur - 1)
+        }
+    }
+    return selectIndex(0, nums.length - 1)
+}
+
+// const res = quickSelect(selectNums, 2)
+// console.log(res);
+
+
+const testReturn = () => {
+    const inner = () => {
+        return 1
+    }
+    inner()
+}
+
+console.log(testReturn());

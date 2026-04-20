@@ -33,7 +33,7 @@ const sin: Name = 'sin'
 type ID = number | string
 
 const fr: ID = 1
-const test: ID = '1'
+// const test: ID = '1'
 // console.log(typeof fr);
 // console.log(typeof test);
 

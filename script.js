@@ -178,10 +178,42 @@ const setNum = (t = 0) => {
 }
 
 const se = -12332445.233
-const res1 = setNum(se)
-console.log(res1)
+// const res1 = setNum(se)
+// console.log(res1)
 
 
 //  防抖：
 
+//  最大字数组和
+
+//  滑动窗口
+
+const getMaxArr = (s = [], k = 0) => {
+
+    let res = 0
+
+    //  个数不够时
+    if (s.length < k) {
+        for (const el of s) {
+            res += el
+        }
+        return res
+    }
+
+    //  计算第一个窗口：
+    for (let i = 0; i < k; i++) {
+        res += s[i]
+    }
+    //  cur一直更新
+    let cur = res
+    //  滑动窗口
+    for (let i = 1; i <= s.length - k; i++) {
+        cur = cur - s[i - 1] + s[i + k - 1]
+        if (cur > res) res = cur
+    }
+    return res
+}
+
+const test = [1, 5, -2, 3, 2, 4]
+console.log(getMaxArr(test, 3));
 
